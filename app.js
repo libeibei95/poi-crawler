@@ -1,34 +1,51 @@
 const request = require('superagent');
 const cheerio = require('cheerio');
 const eventproxy = require('eventproxy')
+const {MongoClient}=require('mongodb');
 
 const fs = require("fs");
 var ep = new eventproxy();
 
-const baseUrl = "http://www.poi86.com";
-const cityUrl = "/poi/amap/city/430100.html";
+const BASE_URL = "http://www.poi86.com";
+const CITY_URL = "/poi/amap/city/430100.html";
 
-var distinctUrls = [];
-var itemUrls = [];
+var distinct_urls = [];
+var item_urls = [];
 
-const response = request.get(baseUrl+cityUrl);
+const response = request.get(BASE_URL+CITY_URL);
+const db_url = 'mongodb://localhost:27017/';
+// Database Name
+const db_name = 'poi';
+const collection_name  = "changsha";
 
 async function main(){
+    let client;
+    try{
+    client = await MongoClient.connect(db_url);    
+    const db = client.db(dbName);
+    const collection = db.collection(collection_name);
+    }catch(err){
+        console.log(err.stack);
+    }
+
     
-}x
+    if(client){
+        client.close();
+    }
+}
 
 
-request.get(baseUrl+cityUrl)
+request.get(BASE_URL+CITY_URL)
     .then(res=>{
         if(res.err) throw err;
         let $ = cheerio.load(res.text);
         $(".list-group-item a").each(function(i,elem){
             //存城市各个地区的URL
-            distinctUrls[i]=baseUrl+$(this).attr("href");
+            distinct_urls[i]=BASE_URL+$(this).attr("href");
         });        
         // 使用 ep 控制爬取各个区域URL的并发
-        ep.after('item_url',distinctUrls.length,function(){
-            fs.writeFile("item_urls.json",JSON.stringify({data:itemUrls}),function(err){
+        ep.after('item_url',distinct_urls.length,function(){
+            fs.writeFile("item_urls.json",JSON.stringify({data:item_urls}),function(err){
                 if(err){
                     console.log(err);
                     throw err;
@@ -37,7 +54,7 @@ request.get(baseUrl+cityUrl)
             })
         })
 
-        distinctUrls.map(url=>{
+        distinct_urls.map(url=>{
             // 处理
             request.get(url)
                 .then(res=>{
@@ -45,13 +62,13 @@ request.get(baseUrl+cityUrl)
                     var $ = cheerio.load(res.text);
                     var pageCount = $(".pagination li a").slice(-1).text().split('/')[1];//获取分页
                     $("table tr td a").slice(1).each(function(i,elem){
-                        itemUrls.push($(this).attr("href"));
+                        item_urls.push($(this).attr("href"));
                     }); 
                     ep.emit('item_url', []);
                 })
         })
 
-        fs.writeFile("data.json",JSON.stringify({data:distinctUrls}),function(err){
+        fs.writeFile("data.json",JSON.stringify({data:distinct_urls}),function(err){
             if(err){
                 console.log(err);
                 throw err;
