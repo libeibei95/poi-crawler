@@ -1,7 +1,7 @@
 const Rx = require('rxjs/Rx');
 const request = require('superagent');
 const cheerio = require('cheerio');
-const {MongoClient}=require('mongodb');
+const { MongoClient } = require('mongodb');
 const assert = require('assert');
 
 const base_url = "http://www.poi86.com";
@@ -25,7 +25,7 @@ async function main() {
 
     console.log("Hello~");
     //crawler data
-    var timer$ = Rx.Observable.interval(1000);
+    var timer$ = Rx.Observable.interval(2000);
 
     var distinct_url_stream$ = Rx.Observable.fromPromise(request.get(base_url + city_url))
         .flatMap(x => {
@@ -41,6 +41,7 @@ async function main() {
             return request.get(url);
         })
         .map((res) => {
+            console.log("-------------")
             if (res.err) throw res.err;
             var $ = cheerio.load(res.text);
             var pageCount = $(".pagination li a").slice(-1).text().split('/')[1];//获取分页
@@ -52,48 +53,53 @@ async function main() {
             var url_prefix = url.split('/').slice(0, -1).join('/');
             var urls = [];
             for (let i = 1; i <= pageCount; i++) {
-                urls.push(url_prefix + '/' + pageCount + '.html');
+                urls.push(url_prefix + '/' + i + '.html');
             }
-            console.log("length of distinct page urls:"+urls.length);   
+            console.log("length of distinct page urls:" + urls.length);
             return urls;
         })
         .zip(timer$)
-        .flatMap(url => request.get(url));
-
-    var item_url_stream$ = Rx.Observable.zip(distinct_url_stream$, timer$)
         .map(([c, t]) => c)
-        .flatMap(res => {
-            if (res.err) return res.err;
-            var $ = cheerio.load(res.text);
-            var urls = [];
-            $("table tr td a").slice(1).each(function (i, elem) {
-                urls.push($(this).attr("href"));
-            });
-            
-            console.log("length of item urls:"+urls.length);  
-            return urls;
-        })
-        .flatMap(url => request.get(url));
+        .flatMap(url => request.get(url))
 
-    Rx.Observable.map(res => {
+    var item_url_stream$ = distinct_url_stream$.flatMap(res => {
+        if (res.err) return res.err;
+        var $ = cheerio.load(res.text);
+        console.log("----------");
+        var urls = [];
+        $("table tr td a").slice(1).each(function (i, elem) {
+            urls.push(base_url + $(this).attr("href"));
+        });
+        return urls;
+    })
+        .zip(timer$)
+        .map(([c, t]) => c)
+        .flatMap(url =>
+            Rx.Observable.of(url)
+                .flatMap(url => request.get(url))
+                .retry(3)
+        )
+        .map(res => {
             if (res.err) return res.err;
             var $ = cheerio.load(res.text);
             var node = $(".list-group .list-group-item");
-            var columns = $(".list-group .list-group-item span").text().split(':');
-            console.log(columns);
+            var columns = $(".list-group .list-group-item span").text().split(':'); // 属性字段
             var indexs = columns.map(c => node.text().indexOf(c));
             var contents = [];
             for (var i = 0; i < indexs.length - 2; i++) {
-                contents.push(node.text().slice(indexs[i], indexs[i + 1]));
+                contents.push(node.text().slice(indexs[i], indexs[i + 1]).replace(/(^\s*)|(\s*$)/g,""));
             }
             contents.push(node.text().slice(indexs[indexs.length - 2]));
 
-            var content_json = {};
+            //添加字段
+            var content_json = {"地点名称":$(".panel-heading h1").text()};
             contents.map(c => {
                 arr = c.split(":");
                 content_json[arr[0]] = arr[1];
             })
             console.log(content_json);
+
+            //加入数据库
             collection.insert(content_json);
         })
         .subscribe(
@@ -105,5 +111,4 @@ async function main() {
             }
         );
 }
-
 main()
