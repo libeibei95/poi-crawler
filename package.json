@@ -12,6 +12,8 @@
     "cheerio": "^1.0.0-rc.2",
     "eventproxy": "^1.0.0",
     "mongodb": "^3.1.0-beta4",
+    "request": "^2.87.0",
+    "request-promise": "^4.2.2",
     "rxjs": "^5.5.7",
     "superagent": "^3.8.3",
     "superagent-proxy": "^1.0.3"
