@@ -9,19 +9,27 @@ Rx.Observable.fromPromise(request.get(url))
     console.log("-------------")
     let ips =[];
 
-    var eles = $("#ip_list tbody").children().slice(1,2).children()
+    var eles = $("#ip_list tbody").children().slice(1,3).children()
+    console.log(`$("#ip_list tbody").children().slice(1,2) is ${$("#ip_list tbody").children().slice(1,2)}`)
+    console.log('------------------')
+    console.log(`$("#ip_list tbody").children().slice(1,3) is ${$("#ip_list tbody").children().slice(1,3)}`)
+    console.log('------------------')
+    console.log(`eles[1] is ${eles[1]}`)
     console.log(`length of eles is ${eles.length}`)
-    console.log(eles[1])
     console.log("-----------------")
     console.log(eles[1].children[0].data)
     console.log(eles[2].children[0].data)
-    $("#ip_list tbody").children().slice(1).map(ele=>{
-      var eles = $(this).children()
-      console.log(eles[1].children[0].data)
-      console.log(eles[2].children[0].data)
-      
-      console.log($(this).children().length)
-    })
+
+    // console.log(Array.from($("#ip_list tbody").children().slice(1)).length)
+
+    // Array.from($("#ip_list tbody").children().slice(1)).map(ele=>{
+    //   // console.log(ele)
+    //   var eles = $(this).children()
+    //   console.log(eles.length)
+    //   // console.log(eles[1].children[0].data)
+    //   // console.log(eles[2].children[0].data)      
+    //   // console.log($(this).children().length)
+    // })
 
     // $("#ip_list tr").slice(1).map(ele=>{
     //   let children = $(this).children()
