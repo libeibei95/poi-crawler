@@ -8,7 +8,7 @@ const fs = require("fs-extra")
 const db_url = 'mongodb://localhost:27017/';
 // Database Name
 const db_name = 'poi';
-const collection_name = "changsha";
+const collection_name = "amap_location_poi";
 
 const max_count_items = 1000 // 最多能查询到1000条记录
 const baseurl = "http://restapi.amap.com/v3/place/around?"
@@ -32,17 +32,22 @@ function concatUrl() {
     }
     return urls
 }
+async function getData(obj) {
+    let res = await request(obj.url)
+    res.id = obj.id;
+    return res
+}
 async function main() {
-    
+
     let count_page = Math.ceil(max_count_items / params.offset)
-    // let client, db, collection;
-    // try {
-    //     client = await MongoClient.connect(db_url);
-    //     db = client.db(db_name);
-    //     collection = db.collection(collection_name);
-    // } catch (err) {
-    //     console.log(err.stack);
-    // }
+    let client, db, collection;
+    try {
+        client = await MongoClient.connect(db_url);
+        db = client.db(db_name);
+        collection = db.collection(collection_name);
+    } catch (err) {
+        console.log(err.stack);
+    }
 
     /**
      * 从 csv 中读取影吧 location 信息
@@ -68,11 +73,11 @@ async function main() {
      * 以下开始拼接字符串，抓取数据
      */
     //控制流量的计时器
-    let timer$ = Rx.Observable.interval(2000)
+    let timer$ = Rx.Observable.interval(200)
 
     // location拼接
     let location$ = Rx.Observable.from(bar_location_array)
-        .map(ele => `location=${ele.lng},${ele.lat}`)
+        .map(ele => ({ 'id': `${ele.id}`, 'location': `location=${ele.lng},${ele.lat}` }))
 
     //url 拼接，获得最终的 url
     let urls$ = location$.map(ele => {
@@ -80,31 +85,35 @@ async function main() {
         for (const [k, v] of Object.entries(params)) {
             url = `${url}${k}=${v}&`
         }
-        return `${url}${ele}&`
+        return { 'id': ele.id, 'url': `${url}${ele.location}&` }
     })
-        .flatMap(url=>{
+        .flatMap(obj => {
             let urls = []
             for (let i = 1; i <= count_page; i++) {
-                urls.push(`${url}page=${i}`)
+                urls.push({ 'id': obj.id, 'url': `${obj.url}page=${i}` })
             }
             return urls
         })
-    
-    //限制流量，并开始抓取数据
+
+    // //限制流量，并开始抓取数据
     urls$.zip(timer$)
         .map(([c, t]) => c)
-        .flatMap(x=>request.get(x))
-        .retry(3)
-        .flatMap(res=>{
-            if(res.err) return res.err
+        .flatMap(obj => getData(obj))
+        .flatMap(obj => {
+            let res = obj
+            if (res.err) return res.err
             let json = JSON.parse(res.text)
-            console.log(typeof(json))
-            return Array.from(json.pois)
+            let pois_arr = Array.from(json.pois)
+            for (poi of pois_arr) {
+                poi["bar_id"] = obj.id
+            }
+            return pois_arr
         })
-        .subscribe(x=>{
+        .subscribe(x => {
             //todo
             //写入mongodb数据库
-        })
+            collection.insert(x);
+        },err=>{console.log(err)})
 
 
 
