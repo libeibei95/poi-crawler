@@ -22,8 +22,6 @@ async function main() {
     } catch (err) {
         console.log(err.stack);
     }
-
-    console.log("Hello~");
     //crawler data
     var timer$ = Rx.Observable.interval(2000);
 
