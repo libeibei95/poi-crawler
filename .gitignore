@@ -4,3 +4,8 @@ test.js
 
 *.csv
 *.json
+
+## 临时文件
+test-data-page-43.js
+test-data-page-44.js
+test.js
