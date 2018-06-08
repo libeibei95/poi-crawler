@@ -8,14 +8,14 @@ const fs = require("fs-extra")
 const db_url = 'mongodb://localhost:27017/';
 // Database Name
 const db_name = 'poi';
-const collection_name = "amap_location_poi_base";
+const collection_name = "amap_location_poi_base_5000";
 
 const max_count_items = 1000 // 最多能查询到1000条记录
 const baseurl = "http://restapi.amap.com/v3/place/around?"
 const params = {
     "key": "7991b152e64b99109eccc3a5be35e75e",
     "offset": 50,
-    "radius": 2000,
+    "radius": 5000,
     "extensions": 'base'
 }
 
