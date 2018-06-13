@@ -9,6 +9,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "babel": "^6.23.0",
+    "babel-polyfill": "^6.26.0",
     "cheerio": "^1.0.0-rc.2",
     "eventproxy": "^1.0.0",
     "fs-extra": "^6.0.1",
