@@ -1,0 +1,1 @@
+node .\multi_points_batch_1500_around_3000.js

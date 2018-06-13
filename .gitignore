@@ -9,3 +9,7 @@ test.js
 test-data-page-43.js
 test-data-page-44.js
 test.js
+res*
+*data/
+result/
+origin_data/
