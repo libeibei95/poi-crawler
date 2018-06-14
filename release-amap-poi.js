@@ -8,12 +8,12 @@ const fs = require("fs-extra")
 const db_url = 'mongodb://localhost:27017/';
 // Database Name
 const db_name = 'poi';
-const collection_name = "amap_location_poi_base_5000";
+const collection_name = "test_token";
 
 const max_count_items = 1000 // 最多能查询到1000条记录
 const baseurl = "http://restapi.amap.com/v3/place/around?"
 const params = {
-    "key": "7991b152e64b99109eccc3a5be35e75e",
+    "key": "e438a1dd18c674c3661c6c571975280e",
     "offset": 50,
     "radius": 5000,
     "extensions": 'base'
@@ -54,7 +54,7 @@ async function main() {
     let bar_location_array
 
     try {
-        let data = await fs.readFile('./bar_location.csv', 'utf8')
+        let data = await fs.readFile('./origin_data/bar_location.csv', 'utf8')
         let arr = data.split('\r\n').slice(0, -1)
         bar_location_array = arr.map(ele => {
             let arr = ele.split(',')
